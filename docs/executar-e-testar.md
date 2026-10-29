@@ -2,22 +2,45 @@
 
 ## Caminho 1: Docker Compose
 
-Pré-requisitos: Docker com Compose. O build usa Maven e JDK 17 dentro da imagem; o runtime é WildFly 35.0.1.Final com Full Profile.
+Pré-requisitos: Bash, Docker em execução e Docker Compose v2 com suporte a `up --wait-timeout`. O build usa Maven e JDK 17 dentro da imagem; o runtime é WildFly 35.0.1.Final com Full Profile. Não é necessário instalar Java ou Maven na máquina para este caminho. No Windows, execute pelo WSL ou Git Bash, com o Docker Desktop ativo.
 
 ```bash
 git clone https://github.com/Leopoldobr/j2ee.git
 cd j2ee
-docker compose up --build
+./iniciar.sh
 ```
 
-Abra [a lista de pedidos](http://localhost:8080/j2ee-patterns/app/orders). Use **Novo pedido**, informe cliente e quantidades maiores que zero e envie. O sistema captura os preços do catálogo, salva pedido/itens e envia o evento JMS. Nos detalhes, recarregue para observar `PROCESSED` e contador `1`.
+O script pode ser chamado de outro diretório: ele resolve o caminho do próprio repositório. Ele verifica os pré-requisitos, executa o build, inicia em segundo plano e aguarda o healthcheck do WAR. Em caso de falha, retorna código diferente de zero e imprime o estado e os últimos logs.
+
+Quando aparecer **Aplicação pronta**, abra [a lista de pedidos](http://localhost:8080/j2ee-patterns/app/orders). Use **Novo pedido**, informe cliente e quantidades maiores que zero e envie. O sistema captura os preços do catálogo, salva pedido/itens e envia o evento JMS. Nos detalhes, recarregue para observar `PROCESSED` e contador `1`.
 
 ```bash
-docker compose logs -f app
-docker compose down
+./iniciar.sh logs
+./iniciar.sh status
+./iniciar.sh restart
+./iniciar.sh stop
 ```
 
-O datasource XA e o limite de redelivery são criados durante a construção da imagem por `infra/configure.cli`. A imagem usa as credenciais locais de demonstração do H2. Não há conta de administração criada nem porta de gerenciamento publicada pelo Compose.
+`logs` fica acompanhando a saída: Ctrl+C encerra a visualização e mantém a aplicação ativa. `stop` executa `docker compose down`, removendo os contêineres e a rede deste projeto. `restart` para o serviço e usa novamente o fluxo de build e espera; só há reconstrução das etapas alteradas do Dockerfile quando o cache é válido.
+
+Para configurar porta e tempo de espera:
+
+```bash
+APP_PORT=9090 STARTUP_TIMEOUT=300 ./iniciar.sh
+# Ao reiniciar na porta personalizada, informe a mesma variável:
+APP_PORT=9090 ./iniciar.sh restart
+```
+
+O limite de espera vale para o serviço ficar saudável; os downloads e o build podem levar mais tempo. A porta dentro do contêiner permanece 8080. O healthcheck consulta um asset do WAR para confirmar o deploy sem criar sessões de usuário. Ele não substitui os testes completos de banco e mensageria.
+
+O datasource XA e o limite de redelivery são criados durante a construção da imagem por `infra/configure.cli`. O H2 e o broker Artemis são executados pelo próprio WildFly: não é necessário iniciar serviços separados para este laboratório. A imagem usa as credenciais locais de demonstração do H2. Não há conta de administração criada nem porta de gerenciamento publicada pelo Compose.
+
+Também é possível usar o Compose diretamente:
+
+```bash
+docker compose up --build --wait --wait-timeout 180
+docker compose down
+```
 
 O Compose não configura volume persistente. Além disso, o JPA está em `drop-and-create`: **redeploy recria as tabelas**, mesmo que você adicione um volume posteriormente. O objetivo é estudo reproduzível.
 
@@ -128,6 +151,10 @@ A fila da aplicação é declarada por `@JMSDestinationDefinition`. Não coloque
 
 | Sintoma | Conferir |
 |---|---|
+| Docker ausente ou indisponível | Instale/inicie o Docker Engine ou Docker Desktop e confira as permissões de acesso |
+| Compose sem `--wait-timeout` | Atualize o plugin Docker Compose v2 |
+| Porta 8080 ocupada | Use `APP_PORT=9090 ./iniciar.sh` |
+| Serviço não ficou saudável | Leia os logs exibidos pelo script ou execute `./iniciar.sh logs` |
 | `javac` ausente | Instale um JDK, não apenas um JRE |
 | Falha de download Maven | Acesso ao Maven Central e configuração de proxy/certificados da sua rede |
 | `PatternsDS` não encontrado | Execute `infra/configure.cli` antes do deploy |

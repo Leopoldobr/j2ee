@@ -8,15 +8,25 @@ O exemplo é uma aplicação de pedidos. Você cria um pedido com vários produt
 
 ## Executar
 
-Com Docker e Docker Compose:
+Com Bash, Docker e Docker Compose v2:
 
 ```bash
 git clone https://github.com/Leopoldobr/j2ee.git
 cd j2ee
-docker compose up --build
+./iniciar.sh
 ```
 
-Abra **http://localhost:8080/j2ee-patterns/app/orders**. O primeiro build baixa dependências e o servidor leva alguns segundos para iniciar.
+O script constrói a imagem, configura o datasource XA e a fila JMS e aguarda o deploy do WAR. Ao concluir, abra **http://localhost:8080/j2ee-patterns/app/orders**. O primeiro build baixa as imagens e dependências. Java e Maven são executados dentro do Docker.
+
+```bash
+./iniciar.sh logs       # Acompanhar os logs
+./iniciar.sh status     # Ver o estado da aplicação
+./iniciar.sh stop       # Encerrar e remover os contêineres
+./iniciar.sh restart    # Reiniciar e aplicar alterações do código
+APP_PORT=9090 ./iniciar.sh  # Usar outra porta HTTP local
+```
+
+O [Dockerfile](Dockerfile) faz o build em uma etapa e executa o WildFly em outra. O [Compose](compose.yaml) publica a porta somente em `127.0.0.1`. Veja `./iniciar.sh --help` para os parâmetros disponíveis.
 
 Sem Docker, use JDK 17, Maven 3.9+ e WildFly **35.0.1.Final**. As instruções completas, incluindo a configuração do datasource XA e dos testes em servidor, estão em [executar e testar](docs/executar-e-testar.md).
 
@@ -93,7 +103,7 @@ export WILDFLY_HOME=/caminho/wildfly-35.0.1.Final
 bash scripts/integration.sh
 ```
 
-Os testes unitários verificam invariantes do agregado, precisão monetária, limites de paginação, composição dos DTOs e interpretação de formulários. O roteiro em servidor verifica JSP/EL, CDI/EJB, JDBC/JPA, fila JMS, mensagens duplicadas concorrentes, JNDI, validações e navegação. A [CI](.github/workflows/ci.yml) executa ambos.
+Os testes unitários verificam invariantes do agregado, precisão monetária, limites de paginação, composição dos DTOs e interpretação de formulários. O roteiro em servidor verifica JSP/EL, CDI/EJB, JDBC/JPA, fila JMS, mensagens duplicadas concorrentes, JNDI, validações e navegação. A [CI](.github/workflows/ci.yml) executa ambos e também constrói a imagem, inicia pelo script Bash e repete os cenários HTTP no contêiner.
 
 Siga também os [exercícios guiados](docs/exercicios.md) e consulte os [resultados de validação](docs/validacao.md).
 
