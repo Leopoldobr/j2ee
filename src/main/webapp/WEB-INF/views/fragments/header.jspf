@@ -1,0 +1,12 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Core J2EE Patterns · Laboratório</title>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/styles.css"></head><body>
+<header><div class="shell"><a class="brand" href="${pageContext.request.contextPath}/app/orders">J2EE <span>patterns lab</span></a>
+<nav aria-label="Principal"><a href="${pageContext.request.contextPath}/app/orders">Pedidos</a>
+<a href="${pageContext.request.contextPath}/app/new">Novo pedido</a>
+<a href="${pageContext.request.contextPath}/app/catalog">Dispatcher View</a>
+<a href="${pageContext.request.contextPath}/app/locator">Service Locator</a></nav></div></header>
+<main class="shell">

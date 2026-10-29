@@ -1,0 +1,31 @@
+name: Java e integração Jakarta EE
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - run: mvn -B -ntp clean verify
+      - name: Baixar WildFly fixado para o laboratório
+        run: |
+          curl --fail --location --retry 3 https://repo.maven.apache.org/maven2/org/wildfly/wildfly-dist/35.0.1.Final/wildfly-dist-35.0.1.Final.zip -o "$RUNNER_TEMP/wildfly.zip"
+          unzip -q "$RUNNER_TEMP/wildfly.zip" -d "$RUNNER_TEMP"
+      - name: Testar em um servidor real
+        run: bash scripts/integration.sh
+        env:
+          WILDFLY_HOME: ${{ runner.temp }}/wildfly-35.0.1.Final
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: diagnostico
+          path: |
+            target/surefire-reports/
+            target/wildfly*.log

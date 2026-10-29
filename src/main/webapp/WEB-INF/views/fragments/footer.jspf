@@ -1,0 +1,2 @@
+</main><footer class="shell">Laboratório dos 15 padrões · Java 17 + Jakarta EE 10
+<br><small>Requisição: <c:out value="${requestId}"/></small></footer></body></html>

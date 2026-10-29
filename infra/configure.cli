@@ -1,0 +1,8 @@
+# Execute uma vez em uma instalação de laboratório, com o servidor parado.
+embed-server --server-config=standalone-full.xml --std-out=echo
+batch
+/subsystem=datasources/xa-data-source=PatternsDS:add(jndi-name="java:/jdbc/PatternsDS",driver-name=h2,xa-datasource-class="org.h2.jdbcx.JdbcDataSource",user-name=sa,password=sa,min-pool-size=1,max-pool-size=10)
+/subsystem=datasources/xa-data-source=PatternsDS/xa-datasource-properties=URL:add(value="jdbc:h2:${jboss.server.data.dir}/patterns;DB_CLOSE_ON_EXIT=FALSE")
+/subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=max-delivery-attempts,value=3)
+run-batch
+stop-embedded-server
